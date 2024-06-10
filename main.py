@@ -1,6 +1,5 @@
 import streamlit as st
 from datetime import date
-
 import yfinance as yf
 from prophet import Prophet
 from prophet.plot import plot_plotly
@@ -11,39 +10,36 @@ TODAY = date.today().strftime('%Y-%m-%d')
 
 st.title('STOCK ANALYSIS')
 
-stocks = ('AAPL','GOOG','MSFT','GME')
+stocks = ('AAPL', 'GOOG', 'MSFT', 'GME')
 selected_stocks = st.selectbox('Select dataset', stocks)
 
-n_years = st.slider("Years :" ,1 , 4)
+n_years = st.slider("Years:", 1, 4)
+period = n_years * 365
 
-period = n_years * 365 
-
-
+@st.cache_data
 def load_data(ticker):
-    data = yf.download(ticker,START,TODAY)
+    data = yf.download(ticker, START, TODAY, progress=False)
     data.reset_index(inplace=True)
     return data
 
-data_load_state = st.text('LOAD DATA')
+data_load_state = st.text('Loading data...')
 data = load_data(selected_stocks)
-data_load_state.text('LOADING DATA.......................done')
+data_load_state.text('Loading data... done!')
 
-st.subheader('RAW DATA')
+st.subheader('Raw Data')
 st.write(data.head())
-
 
 def plot_raw_data():
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=data['Date'],y=data['Open'],name='Stock open'))
-    fig.add_trace(go.Scatter(x=data['Date'],y=data['Close'],name='Stock close'))
-    fig.layout.update(title_text = 'Time Series Data', xaxis_rangeslider_visible=True)
+    fig.add_trace(go.Scatter(x=data['Date'], y=data['Open'], name='Stock Open'))
+    fig.add_trace(go.Scatter(x=data['Date'], y=data['Close'], name='Stock Close'))
+    fig.layout.update(title_text='Time Series Data', xaxis_rangeslider_visible=True)
     st.plotly_chart(fig)
 
 plot_raw_data()
 
-
-df_train = data[['Date','Close']]
-df_train = df_train.rename(columns = {'Date':'ds','Close':'y'})
+df_train = data[['Date', 'Close']]
+df_train = df_train.rename(columns={'Date': 'ds', 'Close': 'y'})
 
 m = Prophet()
 m.fit(df_train)
@@ -53,11 +49,10 @@ forecast = m.predict(future)
 st.subheader('Forecast Data')
 st.write(forecast.tail())
 
-st.write('Forecast data')
-fig1 = plot_plotly(m,forecast)
+st.write('Forecast Data')
+fig1 = plot_plotly(m, forecast)
 st.plotly_chart(fig1)
 
-st.write('Forecast components')
+st.write('Forecast Components')
 fig2 = m.plot_components(forecast)
 st.write(fig2)
-
